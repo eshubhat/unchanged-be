@@ -1,0 +1,153 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: ecommerce-api
+    restart: unless-stopped
+    ports:
+      - '${PORT:-3000}:3000'
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-ecommerce}
+      REDIS_URL: redis://redis:6379
+      APP_BASE_URL: http://localhost:${PORT:-3000}
+      # ── Default: local storage (no AWS required) ─────────────────────────
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      LOCAL_UPLOAD_DIR: /app/uploads
+    volumes:
+      - ./src:/app/src                      # hot-reload
+      - uploads_data:/app/uploads           # persisted local file uploads
+    command: npm run start:dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ecommerce-net
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:3000/api/v1/health || exit 1']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── PostgreSQL (self-hosted, free) ──────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecommerce-postgres
+    restart: unless-stopped
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+      POSTGRES_DB: ${POSTGRES_DB:-ecommerce}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ecommerce-net
+
+  # ── Redis (self-hosted, free) ────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce-redis
+    restart: unless-stopped
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ecommerce-net
+
+  # ── Nginx reverse proxy (self-hosted, free) ─────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: ecommerce-nginx
+    restart: unless-stopped
+    ports:
+      - '80:80'
+    volumes:
+      - ./docker/nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+    networks:
+      - ecommerce-net
+    profiles:
+      - nginx   # optional: docker compose --profile nginx up
+
+  # ── Dev tools (optional, start with: docker compose --profile tools up) ─────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: ecommerce-pgadmin
+    restart: unless-stopped
+    ports:
+      - '5050:80'
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.dev
+      PGADMIN_DEFAULT_PASSWORD: admin
+    depends_on:
+      - postgres
+    networks:
+      - ecommerce-net
+    profiles:
+      - tools
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: ecommerce-redis-ui
+    restart: unless-stopped
+    ports:
+      - '8081:8081'
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - ecommerce-net
+    profiles:
+      - tools
+
+  # ── MailHog: local email catcher (zero SMTP config needed in dev) ───────────
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: ecommerce-mailhog
+    restart: unless-stopped
+    ports:
+      - '1025:1025'   # SMTP — point SMTP_HOST=mailhog, SMTP_PORT=1025
+      - '8025:8025'   # Web UI — open http://localhost:8025
+    networks:
+      - ecommerce-net
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads_data:     # persists local file uploads across restarts
+
+networks:
+  ecommerce-net:
+    driver: bridge
