@@ -1,4 +1,5 @@
 import { NestFactory, Reflector } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
@@ -10,7 +11,10 @@ import { GlobalJwtAuthGuard } from './modules/auth/guards/global-jwt.guard';
 import { RolesGuard } from './modules/auth/guards/roles.guard';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  //to allow for nginx to work in prod
+  app.set('trust proxy', true);
 
   // ─── Security ─────────────────────────────────────────────────────────────
   app.use(helmet());
