@@ -15,6 +15,7 @@ import { Warehouse } from '../inventory/entities/warehouse.entity';
 
 // Controllers
 import { ProductsController, AdminProductsController } from './products.controller';
+import { CategoriesController } from './categories.controller';
 
 // Services & Repositories
 import { ProductsService } from './products.service';
@@ -38,6 +39,7 @@ import { ProductsRepository } from './repositories/products.repository';
   controllers: [
     ProductsController,
     AdminProductsController,
+    CategoriesController,
   ],
   providers: [
     ProductsService,
