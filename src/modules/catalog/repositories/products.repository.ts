@@ -6,7 +6,7 @@ import { PaginatedProductsDto } from '../dto/product-response.dto';
 
 @Injectable()
 export class ProductsRepository {
-  private readonly repo: Repository<Product>;
+  public readonly repo: Repository<Product>;
 
   constructor(private readonly dataSource: DataSource) {
     this.repo = this.dataSource.getRepository(Product);

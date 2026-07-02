@@ -20,9 +20,11 @@ import { CategoriesController } from './categories.controller';
 // Services & Repositories
 import { ProductsService } from './products.service';
 import { ProductsRepository } from './repositories/products.repository';
+import { UploadsModule } from '../uploads/uploads.module';
 
 @Module({
   imports: [
+    UploadsModule,
     TypeOrmModule.forFeature([
       Product,
       ProductVariant,
