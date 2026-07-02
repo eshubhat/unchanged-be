@@ -20,6 +20,7 @@ import { Inventory } from '../inventory/entities/inventory.entity';
 import { Collection } from './entities/collection.entity';
 import { Category } from './entities/category.entity';
 import { Brand } from './entities/brand.entity';
+import { UploadsService } from '../uploads/uploads.service';
 
 @Injectable()
 export class ProductsService {
@@ -40,6 +41,7 @@ export class ProductsService {
     private readonly categoryRepo: Repository<Category>,
     @InjectRepository(Brand)
     private readonly brandRepo: Repository<Brand>,
+    private readonly uploadsService: UploadsService,
   ) {}
 
   // ─── Create ──────────────────────────────────────────────────────────────────
@@ -250,7 +252,27 @@ export class ProductsService {
       throw new NotFoundException(`Product '${id}' not found`);
     }
 
-    await this.productsRepository.softDelete(id);
+    // Delete physical image files
+    if (product.images?.length) {
+      for (const img of product.images) {
+        if (!img.url) continue;
+        try {
+          // Extract the storage key from the public URL.
+          // e.g. http://localhost:3000/api/v1/uploads/files/products/123.jpg -> products/123.jpg
+          const parts = img.url.split('/uploads/files/');
+          if (parts.length === 2) {
+            const key = parts[1];
+            await this.uploadsService.deleteFile(key);
+          }
+        } catch (err) {
+          // Log error but continue deleting the product
+          console.error(`Failed to delete image file for product ${id}:`, err);
+        }
+      }
+    }
+
+    // Hard delete the product (cascades will delete ProductImage, ProductVariant, etc from DB)
+    await this.productsRepository.repo.delete(id);
   }
 
   // ─── Variant Management ───────────────────────────────────────────────────────
