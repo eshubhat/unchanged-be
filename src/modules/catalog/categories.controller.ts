@@ -1,8 +1,9 @@
-import { Controller, Get, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseInterceptors, ClassSerializerInterceptor, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Public } from '../auth/decorators/public.decorator';
+import slugify from 'slugify';
 import { Category } from './entities/category.entity';
 
 @ApiTags('Categories')
@@ -29,5 +30,35 @@ export class CategoriesController {
       order: { displayOrder: 'ASC', name: 'ASC' },
       select: ['id', 'name', 'slug', 'imageUrl', 'displayOrder'],
     });
+  }
+
+  /**
+   * POST /api/v1/categories
+   * Creates a new category.
+   */
+  @Post()
+  @ApiOperation({ summary: 'Create a new category' })
+  @ApiResponse({ status: 201, description: 'Category created' })
+  async create(@Body() body: { name: string, description?: string }): Promise<Category> {
+    if (!body.name || !body.name.trim()) {
+      throw new BadRequestException('Category name is required');
+    }
+
+    let slug = slugify(body.name, { lower: true, strict: true, trim: true });
+    
+    // Ensure slug uniqueness
+    const existing = await this.categoryRepo.findOne({ where: { slug } });
+    if (existing) {
+       slug = `${slug}-${Math.random().toString(36).substring(2, 6)}`;
+    }
+
+    const category = this.categoryRepo.create({
+      name: body.name.trim(),
+      slug,
+      description: body.description ?? null,
+      isActive: true,
+    });
+
+    return this.categoryRepo.save(category);
   }
 }

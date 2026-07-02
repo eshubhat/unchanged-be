@@ -17,7 +17,23 @@ async function bootstrap() {
   app.set('trust proxy', true);
 
   // ─── Security ─────────────────────────────────────────────────────────────
-  app.use(helmet());
+  app.use(
+    helmet({
+      // Allow images to be loaded cross-origin (frontend on :5173 loading images from :3000)
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          imgSrc: ["'self'", 'data:', 'blob:', '*'],   // allow cross-origin images
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", 'https:', "'unsafe-inline'"],
+          fontSrc: ["'self'", 'https:', 'data:'],
+          objectSrc: ["'none'"],
+          upgradeInsecureRequests: [],
+        },
+      },
+    }),
+  );
   app.use(cookieParser());
   app.enableCors({
     origin: process.env.ALLOWED_ORIGINS?.split(',') ?? 'http://localhost:3000',

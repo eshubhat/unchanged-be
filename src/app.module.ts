@@ -6,6 +6,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AuthModule } from './modules/auth/auth.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 import { dataSourceOptions } from './database/data-source';
 
 @Module({
@@ -47,6 +48,7 @@ import { dataSourceOptions } from './database/data-source';
     AuthModule,
     CatalogModule,
     OrdersModule,
+    UploadsModule,
   ],
 })
 export class AppModule {}
