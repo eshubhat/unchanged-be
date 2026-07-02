@@ -64,7 +64,8 @@ export class UploadsService {
 
     // Build a unique object key
     const ext = this.mimeToExt(contentType);
-    const key = `${folder}/${userId}/${uuidv4()}.${ext}`;
+    const userPath = userId ? `${userId}/` : '';
+    const key = `${folder}/${userPath}${uuidv4()}.${ext}`;
 
     return this.storage.getPresignedUrl(key, contentType, fileSizeBytes);
   }

@@ -139,8 +139,11 @@ export class ProductsService {
         await manager.save(ProductImage, images);
       }
 
-      // Return the full product
-      return (await this.productsRepository.findById(savedProduct.id))!;
+      // Return the full product using the transaction manager so it sees the uncommitted inserts
+      return (await manager.findOne(Product, {
+        where: { id: savedProduct.id },
+        relations: ['category', 'subcategory', 'brand', 'images', 'attributes', 'variants', 'variants.inventory'],
+      }))!;
     });
   }
 
@@ -231,7 +234,10 @@ export class ProductsService {
 
       await manager.save(Product, product);
 
-      return (await this.productsRepository.findById(id))!;
+      return (await manager.findOne(Product, {
+        where: { id },
+        relations: ['category', 'subcategory', 'brand', 'images', 'attributes', 'variants', 'variants.inventory'],
+      }))!;
     });
   }
 
