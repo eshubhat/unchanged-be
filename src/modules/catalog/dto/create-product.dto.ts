@@ -178,7 +178,7 @@ export class CreateProductDto {
   @ApiPropertyOptional({ default: false })
   @IsOptional()
   @IsBoolean()
-  isLimited?: boolean;
+  isLimitedStock?: boolean;
 
   @ApiPropertyOptional({ default: true })
   @IsOptional()

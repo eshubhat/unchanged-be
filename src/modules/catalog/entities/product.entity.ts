@@ -73,8 +73,8 @@ export class Product extends BaseEntity {
   @Column({ name: 'is_featured', type: 'boolean', default: false })
   isFeatured: boolean;
 
-  @Column({ name: 'is_limited', type: 'boolean', default: false })
-  isLimited: boolean;
+  @Column({ name: 'is_limited_stock', type: 'boolean', default: false })
+  isLimitedStock: boolean;
 
   @Column({ name: 'tags', type: 'varchar', array: true, default: '{}' })
   tags: string[];

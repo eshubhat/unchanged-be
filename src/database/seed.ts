@@ -31,35 +31,35 @@ async function seed() {
       price: 799,
       imageFront: "/src/assets/tshirt-designs/Vintage-front.jpg",
       imageBack: "/src/assets/tshirt-designs/Vintage-back.jpg",
-      isLimited: true,
+      isLimitedStock: true,
     },
     {
       title: "Ferarri Oversized Tee",
       price: 799,
       imageFront: "/src/assets/tshirt-designs/Ferarri-front.jpg",
       imageBack: "/src/assets/tshirt-designs/Ferarri-back.jpg",
-      isLimited: true,
+      isLimitedStock: true,
     },
     {
       title: "Space Theme Oversized Tee",
       price: 799,
       imageFront: "/src/assets/tshirt-designs/Space-front.jpg",
       imageBack: "/src/assets/tshirt-designs/Space-back.jpg",
-      isLimited: true,
+      isLimitedStock: true,
     },
     {
       title: "Monte Carlo Oversized Tee",
       price: 799,
       imageFront: "/src/assets/tshirt-designs/monte-carlo-front.jpg",
       imageBack: "/src/assets/tshirt-designs/monte-carlo-back.jpg",
-      isLimited: true,
+      isLimitedStock: true,
     },
     {
       title: "Peanuts Oversized Tee",
       price: 799,
       imageFront: "/src/assets/tshirt-designs/peanuts_front.jpg",
       imageBack: "/src/assets/tshirt-designs/peanuts-back.jpg",
-      isLimited: true,
+      isLimitedStock: true,
     },
   ];
 
@@ -78,7 +78,7 @@ async function seed() {
         basePrice: 1299,
         sellingPrice: p.price,
         categoryId: category.id,
-        isFeatured: p.isLimited,
+        isFeatured: p.isLimitedStock,
         isActive: true,
       });
       await productRepo.save(product);

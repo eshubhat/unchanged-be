@@ -65,6 +65,7 @@ export class ProductResponseDto {
   @Expose() sellingPrice: number;
   @Expose() discountPercent: number;
   @Expose() isFeatured: boolean;
+  @Expose() isLimitedStock: boolean;
   @Expose() isActive: boolean;
   @Expose() tags: string[];
   @Expose() metaTitle: string | null;
