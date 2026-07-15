@@ -7,6 +7,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
+import { AddressModule } from './modules/address/address.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 import { dataSourceOptions } from './database/data-source';
 
 @Module({
@@ -49,6 +51,8 @@ import { dataSourceOptions } from './database/data-source';
     CatalogModule,
     OrdersModule,
     UploadsModule,
+    AddressModule,
+    PaymentsModule,
   ],
 })
 export class AppModule {}

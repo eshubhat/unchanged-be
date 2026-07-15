@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Razorpay from 'razorpay';
+const Razorpay = require('razorpay');
 import * as crypto from 'crypto';
 import {
   BadRequestException,
@@ -26,7 +26,7 @@ export interface CreateRazorpayOrderResult {
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
-  private readonly razorpay: Razorpay;
+  private readonly razorpay: typeof Razorpay;
   private readonly webhookSecret: string;
 
   constructor(

@@ -28,14 +28,20 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { User } from './entities/user.entity';
+import { ConfigService } from '@nestjs/config';
+import { GoogleProfile } from './strategies/google.strategy';
 
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   // ─── Register ─────────────────────────────────────────────────────────────
 
@@ -216,5 +222,50 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current authenticated user' })
   async getMe(@CurrentUser() user: User) {
     return { user };
+  }
+
+  // ─── Google OAuth ──────────────────────────────────────────────────────────
+
+  /**
+   * GET /api/v1/auth/google
+   * Redirects the browser to Google's OAuth consent page.
+   */
+  @Public()
+  @UseGuards(GoogleAuthGuard)
+  @Get('google')
+  @ApiOperation({ summary: 'Initiate Google OAuth login' })
+  async googleAuth() {
+    // Passport handles the redirect automatically — this body never runs
+  }
+
+  /**
+   * GET /api/v1/auth/google/callback
+   * Google redirects here after the user consents.
+   * Issues a JWT and redirects to the frontend /auth/callback page with the token.
+   */
+  @Public()
+  @UseGuards(GoogleAuthGuard)
+  @Get('google/callback')
+  @ApiOperation({ summary: 'Google OAuth callback' })
+  async googleCallback(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    const profile = req.user as GoogleProfile;
+    const result = await this.authService.googleLogin(profile, ip, userAgent);
+    const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
+    const userPayload = {
+      id: (result.user as any).id,
+      firstName: result.user.firstName,
+      lastName: (result.user as any).lastName ?? null,
+      email: result.user.email,
+      avatarUrl: (result.user as any).avatarUrl ?? null,
+      role: (result.user as any).role,
+    };
+    res.redirect(
+      `${frontendUrl}/auth/callback?token=${encodeURIComponent(result.accessToken)}&user=${encodeURIComponent(JSON.stringify(userPayload))}&hasAddress=${result.hasAddress ? '1' : '0'}`
+    );
   }
 }

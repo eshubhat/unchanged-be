@@ -3,6 +3,10 @@ import { dataSourceOptions } from './data-source';
 import { Product } from '../modules/catalog/entities/product.entity';
 import { Category } from '../modules/catalog/entities/category.entity';
 import { ProductImage } from '../modules/catalog/entities/product-image.entity';
+import { ProductVariant } from '../modules/catalog/entities/product-variant.entity';
+import { Inventory } from '../modules/inventory/entities/inventory.entity';
+import { Warehouse } from '../modules/inventory/entities/warehouse.entity';
+import { ProductSize } from '../common/enums';
 
 const slugify = (str: string) => str.toLowerCase().replace(/\s+/g, '-');
 
@@ -65,11 +69,13 @@ async function seed() {
 
   const productRepo = dataSource.getRepository(Product);
   const imageRepo = dataSource.getRepository(ProductImage);
+  const variantRepo = dataSource.getRepository(ProductVariant);
+  const inventoryRepo = dataSource.getRepository(Inventory);
 
   for (const [index, p] of products.entries()) {
     const slug = slugify(p.title);
     
-    let product = await productRepo.findOne({ where: { slug } });
+    let product = await productRepo.findOne({ where: { slug }, relations: ['variants'] });
     if (!product) {
       product = productRepo.create({
         name: p.title,
@@ -82,6 +88,7 @@ async function seed() {
         isActive: true,
       });
       await productRepo.save(product);
+      product.variants = [];
 
       // Create Images
       const imgFront = imageRepo.create({
@@ -99,6 +106,50 @@ async function seed() {
       
       await imageRepo.save([imgFront, imgBack]);
       console.log(`Created product: ${p.title}`);
+    }
+
+    if (!product.variants || product.variants.length === 0) {
+      // Create a default variant
+      const variant = variantRepo.create({
+        product: product,
+        sku: `TEE-${1000 + index}-M`,
+        size: ProductSize.M,
+        color: 'White',
+        isActive: true,
+      });
+      await variantRepo.save(variant);
+      product.variants = [variant];
+      console.log(`Created default variant for: ${p.title}`);
+    }
+
+    // We need a warehouse for inventory.
+    const warehouseRepo = dataSource.getRepository(Warehouse);
+    let warehouse = await warehouseRepo.findOne({ where: {} });
+    if (!warehouse) {
+      warehouse = warehouseRepo.create({
+        name: 'Main Warehouse',
+        code: 'WH-MAIN',
+        addressLine1: '123 Warehouse Road',
+        city: 'Bangalore',
+        state: 'Karnataka',
+        pincode: '560001',
+        isActive: true,
+      });
+      await warehouseRepo.save(warehouse);
+    }
+
+    for (const variant of product.variants) {
+      const existingInventory = await inventoryRepo.findOne({ where: { variantId: variant.id } });
+      if (!existingInventory) {
+        const inventory = inventoryRepo.create({
+          variantId: variant.id,
+          warehouseId: warehouse.id,
+          quantity: 100,
+          reservedQuantity: 0,
+        });
+        await inventoryRepo.save(inventory);
+        console.log(`Created inventory for variant: ${variant.id}`);
+      }
     }
   }
 
