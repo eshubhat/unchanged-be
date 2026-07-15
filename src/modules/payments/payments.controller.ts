@@ -33,6 +33,7 @@ class InitiatePaymentDto {
 }
 
 class VerifyPaymentDto {
+  @ApiProperty({ description: 'Internal order UUID' }) @IsUUID() orderId: string;
   @ApiProperty() @IsString() @IsNotEmpty() razorpayOrderId: string;
   @ApiProperty() @IsString() @IsNotEmpty() razorpayPaymentId: string;
   @ApiProperty() @IsString() @IsNotEmpty() razorpaySignature: string;
@@ -72,11 +73,10 @@ export class PaymentsController {
   @ApiResponse({ status: 400, description: 'Invalid signature' })
   async verifyPayment(
     @Body() dto: VerifyPaymentDto,
-    @Body('orderId') orderId: string,
     @CurrentUser('id') userId: string,
   ) {
     return this.paymentsService.verifyPayment(
-      orderId,
+      dto.orderId,
       userId,
       dto.razorpayOrderId,
       dto.razorpayPaymentId,

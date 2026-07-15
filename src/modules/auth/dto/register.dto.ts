@@ -5,9 +5,57 @@ import {
   MaxLength,
   Matches,
   IsOptional,
+  ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
+
+export class RegisterAddressDto {
+  @ApiProperty({ example: 'House 12, Baker Street, Koramangala' })
+  @IsString()
+  @MaxLength(255)
+  @Transform(({ value }) => value?.trim())
+  addressLine1: string;
+
+  @ApiPropertyOptional({ example: 'Near Residency Road' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  @Transform(({ value }) => value?.trim())
+  addressLine2?: string;
+
+  @ApiPropertyOptional({ example: 'Near Apollo Hospital' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  @Transform(({ value }) => value?.trim())
+  landmark?: string;
+
+  @ApiProperty({ example: 'Bengaluru' })
+  @IsString()
+  @MaxLength(100)
+  @Transform(({ value }) => value?.trim())
+  city: string;
+
+  @ApiProperty({ example: 'Karnataka' })
+  @IsString()
+  @MaxLength(100)
+  @Transform(({ value }) => value?.trim())
+  state: string;
+
+  @ApiProperty({ example: '560034' })
+  @IsString()
+  @MaxLength(10)
+  @Transform(({ value }) => value?.trim())
+  pincode: string;
+
+  @ApiPropertyOptional({ example: 'India' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  @Transform(({ value }) => value?.trim())
+  country?: string;
+}
 
 export class RegisterDto {
   @ApiProperty({ example: 'john@example.com' })
@@ -42,4 +90,18 @@ export class RegisterDto {
       'Password must contain uppercase, lowercase, number and special character',
   })
   password: string;
+
+  @ApiPropertyOptional({ example: '+919876543210' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(15)
+  @Transform(({ value }) => value?.trim())
+  phone?: string;
+
+  /** First shipping address — collected at registration to pre-fill checkout */
+  @ApiPropertyOptional({ type: () => RegisterAddressDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => RegisterAddressDto)
+  address?: RegisterAddressDto;
 }

@@ -10,11 +10,13 @@ import { TokenService } from './services/token.service';
 
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
 
 import { User } from './entities/user.entity';
 import { Role } from './entities/role.entity';
 import { Permission } from './entities/permission.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { Address } from '../address/entities/address.entity';
 
 @Module({
   imports: [
@@ -36,7 +38,7 @@ import { RefreshToken } from './entities/refresh-token.entity';
       }),
     }),
 
-    TypeOrmModule.forFeature([User, Role, Permission, RefreshToken]),
+    TypeOrmModule.forFeature([User, Role, Permission, RefreshToken, Address]),
   ],
 
   controllers: [AuthController],
@@ -46,6 +48,7 @@ import { RefreshToken } from './entities/refresh-token.entity';
     TokenService,
     JwtStrategy,
     JwtRefreshStrategy,
+    GoogleStrategy,
   ],
 
   exports: [

@@ -191,8 +191,18 @@ export class OrdersService {
         await manager.delete(CartItem, { cart: { userId } });
       }
 
-      // 14. Load full order for response
-      const fullOrder = await this.ordersRepository.findById(savedOrder.id);
+      // 14. Load full order for response (inside transaction)
+      const fullOrder = await manager
+        .createQueryBuilder(Order, 'order')
+        .leftJoinAndSelect('order.items', 'item')
+        .leftJoinAndSelect('order.statusHistory', 'history')
+        .leftJoinAndSelect('order.payment', 'payment')
+        .leftJoinAndSelect('order.coupon', 'coupon')
+        .leftJoinAndSelect('order.user', 'user')
+        .leftJoinAndSelect('history.changedByUser', 'changedBy')
+        .where('order.id = :id', { id: savedOrder.id })
+        .orderBy('history.createdAt', 'ASC')
+        .getOne();
 
       // 15. Emit domain event (non-blocking — outside transaction)
       setImmediate(() => {
@@ -274,10 +284,7 @@ export class OrdersService {
       // Validate transition
       OrderStateMachine.assertTransition(order.status, dto.status);
 
-      // Shipping-specific validation
-      if (dto.status === OrderStatus.SHIPPED && !dto.trackingNumber) {
-        throw new BadRequestException('trackingNumber is required when marking order as Shipped');
-      }
+      // Shipping-specific validation (Disabled for manual flow)
 
       const previousStatus = order.status;
 
