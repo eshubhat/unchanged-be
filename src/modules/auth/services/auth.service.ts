@@ -347,17 +347,20 @@ export class AuthService {
 
   /**
    * Sets the refresh token as an httpOnly Secure SameSite cookie.
-   * Call this from the controller after obtaining tokens.
+   * Always uses JWT_REFRESH_EXPIRES_IN (not the access token TTL) for maxAge,
+   * so the cookie outlives the access token and can be used to silently renew it.
    */
-  setRefreshTokenCookie(res: Response, refreshToken: string, expiresIn: number): void {
+  setRefreshTokenCookie(res: Response, refreshToken: string): void {
+    const refreshExpiry = this.configService.get<number>('JWT_REFRESH_EXPIRES_IN', 604800); // 7d default
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',
       sameSite: 'strict',
-      maxAge: expiresIn * 1000,
-      path: '/api/v1/auth',  // restrict cookie scope to auth routes only
+      maxAge: refreshExpiry * 1000,   // 7 days in ms — outlives the access token
+      path: '/api/v1/auth',           // restrict cookie scope to auth routes only
     });
   }
+
 
   clearRefreshTokenCookie(res: Response): void {
     res.clearCookie('refresh_token', { path: '/api/v1/auth' });
