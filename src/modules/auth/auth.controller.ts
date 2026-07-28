@@ -63,7 +63,6 @@ export class AuthController {
     this.authService.setRefreshTokenCookie(
       res,
       result.refreshToken,
-      result.accessTokenExpiresIn,
     );
 
     return {
@@ -93,7 +92,6 @@ export class AuthController {
     this.authService.setRefreshTokenCookie(
       res,
       result.refreshToken,
-      result.accessTokenExpiresIn,
     );
 
     return {
@@ -156,8 +154,8 @@ export class AuthController {
     this.authService.setRefreshTokenCookie(
       res,
       result.refreshToken,
-      result.accessTokenExpiresIn,
     );
+
 
     return {
       accessToken: result.accessToken,
@@ -256,6 +254,11 @@ export class AuthController {
     const profile = req.user as GoogleProfile;
     const result = await this.authService.googleLogin(profile, ip, userAgent);
     const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
+
+    // Set the refresh token cookie BEFORE redirecting so the browser stores it.
+    // This was missing before — Google-auth users had no way to silently renew tokens.
+    this.authService.setRefreshTokenCookie(res, result.refreshToken);
+
     const userPayload = {
       id: (result.user as any).id,
       firstName: result.user.firstName,
