@@ -66,6 +66,7 @@ export class OrdersRepository {
     const qb = this.buildFilterQuery(filter, scopedUserId);
 
     const [data, total] = await qb
+      .leftJoinAndSelect('order.items', 'item')
       .leftJoinAndSelect('order.user', 'user')
       .leftJoinAndSelect('order.payment', 'payment')
       .skip((page - 1) * limit)
