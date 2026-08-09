@@ -34,7 +34,10 @@ import { Address } from '../address/entities/address.entity';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('JWT_SECRET'),
-        signOptions: { expiresIn: config.get<number>('JWT_EXPIRES_IN', 900) },
+        // parseInt() is essential — ConfigService.get<number>() does NOT coerce
+        // env var strings to numbers at runtime; without it the fallback 900s
+        // (15 min) would silently win whenever the env var was unread.
+        signOptions: { expiresIn: parseInt(config.get('JWT_EXPIRES_IN', '86400'), 10) },
       }),
     }),
 

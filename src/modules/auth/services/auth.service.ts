@@ -352,18 +352,30 @@ export class AuthService {
    */
   setRefreshTokenCookie(res: Response, refreshToken: string): void {
     const refreshExpiry = this.configService.get<number>('JWT_REFRESH_EXPIRES_IN', 604800); // 7d default
+    const isProduction = this.configService.get('NODE_ENV') === 'production';
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: this.configService.get('NODE_ENV') === 'production',
-      sameSite: 'strict',
+      secure: isProduction,
+      // 'none' is required in production when FE and BE are on different origins (cross-site),
+      // but only valid when secure=true. In dev (secure=false), 'lax' is the correct pairing.
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: refreshExpiry * 1000,   // 7 days in ms — outlives the access token
-      path: '/api/v1/auth',           // restrict cookie scope to auth routes only
+      // Use '/' so the cookie is sent to ALL backend routes, not just /api/v1/auth.
+      // A restricted path was causing the cookie to silently drop on some browsers.
+      path: '/',
     });
   }
 
 
   clearRefreshTokenCookie(res: Response): void {
-    res.clearCookie('refresh_token', { path: '/api/v1/auth' });
+    const isProduction = this.configService.get('NODE_ENV') === 'production';
+    // Must use the same path and sameSite options used when setting the cookie
+    res.clearCookie('refresh_token', {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      path: '/',
+    });
   }
 
   // ─── Private Helpers ───────────────────────────────────────────────────────
