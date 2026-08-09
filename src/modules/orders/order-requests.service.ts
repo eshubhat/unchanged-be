@@ -41,68 +41,67 @@ export class OrderRequestsService {
 
   // ─── Return Requests ──────────────────────────────────────────────────────────
 
-  async createReturnRequest(
-    userId: string,
-    orderId: string,
-    dto: CreateReturnRequestDto,
-  ): Promise<ReturnRequest> {
-    const order = await this.ordersRepository.findByIdAndUser(orderId, userId);
+  async createReturnRequest(userId: string, orderId: string, dto: CreateReturnRequestDto) {
+    return this.dataSource.transaction(async (manager) => {
+      const order = await manager.findOne(Order, { where: { id: orderId, userId } });
 
-    if (!order) throw new NotFoundException(`Order '${orderId}' not found`);
+      if (!order) throw new NotFoundException(`Order '${orderId}' not found`);
 
-    if (!OrderStateMachine.isReturnable(order.status)) {
-      throw new BadRequestException(
-        `Return can only be requested for delivered orders. Current status: ${order.status}`,
-      );
-    }
+      if (!OrderStateMachine.isReturnable(order.status)) {
+        throw new BadRequestException(
+          `Return can only be requested for delivered orders. Current status: ${order.status}`,
+        );
+      }
 
-    // Prevent duplicate pending return request
-    const existing = await this.returnRepo.findOne({
-      where: {
+      // Prevent duplicate pending return request
+      const existing = await manager.findOne(ReturnRequest, {
+        where: {
+          orderId,
+          userId,
+          status: RequestStatus.REQUESTED,
+        },
+      });
+
+      if (existing) {
+        throw new ConflictException('A return request for this order is already pending review');
+      }
+
+      const returnRequest = manager.create(ReturnRequest, {
         orderId,
         userId,
+        reason: dto.reason,
+        description: dto.description ?? null,
+        evidenceUrls: dto.evidenceUrls ?? [],
         status: RequestStatus.REQUESTED,
-      },
-    });
+      });
 
-    if (existing) {
-      throw new ConflictException('A return request for this order is already pending review');
-    }
+      const saved = await manager.save(ReturnRequest, returnRequest);
 
-    const returnRequest = this.returnRepo.create({
-      orderId,
-      userId,
-      reason: dto.reason,
-      description: dto.description ?? null,
-      evidenceUrls: dto.evidenceUrls ?? [],
-      status: RequestStatus.REQUESTED,
-    });
+      // Update order status to RETURN_REQUESTED (pending review)
+      await manager.update(Order, { id: orderId }, { status: OrderStatus.RETURN_REQUESTED });
 
-    const saved = await this.returnRepo.save(returnRequest);
-
-    // Update order status to RETURN_REQUESTED (pending review)
-    await this.orderRepo.update(orderId, { status: OrderStatus.RETURN_REQUESTED });
-
-    await this.historyRepo.save(
-      this.historyRepo.create({
-        orderId,
-        fromStatus: OrderStatus.DELIVERED,
-        toStatus: OrderStatus.RETURN_REQUESTED,
-        note: `Return requested: ${dto.reason}`,
-        changedBy: userId,
-      }),
-    );
-
-    const updatedOrder = await this.ordersRepository.findById(orderId);
-
-    setImmediate(() => {
-      this.eventEmitter.emit(
-        ReturnRequestedEvent.EVENT_NAME,
-        new ReturnRequestedEvent(updatedOrder!, saved.id, dto.reason),
+      await manager.save(
+        OrderStatusHistory,
+        manager.create(OrderStatusHistory, {
+          orderId,
+          fromStatus: OrderStatus.DELIVERED,
+          toStatus: OrderStatus.RETURN_REQUESTED,
+          note: `Return requested: ${dto.reason}`,
+          changedBy: userId,
+        }),
       );
-    });
 
-    return saved;
+      const updatedOrder = await manager.findOne(Order, { where: { id: orderId } });
+
+      setImmediate(() => {
+        this.eventEmitter.emit(
+          ReturnRequestedEvent.EVENT_NAME,
+          new ReturnRequestedEvent(updatedOrder!, saved.id, dto.reason),
+        );
+      });
+
+      return saved;
+    });
   }
 
   async getReturnRequests(userId: string, orderId: string): Promise<ReturnRequest[]> {
