@@ -18,6 +18,18 @@ import { Permission } from './entities/permission.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { Address } from '../address/entities/address.entity';
 
+function parseDurationToSeconds(val: string): number {
+  const match = val.trim().match(/^(\d+)([smhd])?$/);
+  if (!match) return 86400;
+  const num = parseInt(match[1], 10);
+  switch (match[2]) {
+    case 'm': return num * 60;
+    case 'h': return num * 3600;
+    case 'd': return num * 86400;
+    default: return num;
+  }
+}
+
 @Module({
   imports: [
     ConfigModule,
@@ -34,10 +46,7 @@ import { Address } from '../address/entities/address.entity';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('JWT_SECRET'),
-        // parseInt() is essential — ConfigService.get<number>() does NOT coerce
-        // env var strings to numbers at runtime; without it the fallback 900s
-        // (15 min) would silently win whenever the env var was unread.
-        signOptions: { expiresIn: parseInt(config.get('JWT_EXPIRES_IN', '86400'), 10) },
+        signOptions: { expiresIn: parseDurationToSeconds(config.get('JWT_EXPIRES_IN', '86400')) },
       }),
     }),
 
