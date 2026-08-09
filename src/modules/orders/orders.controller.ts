@@ -191,33 +191,8 @@ export class AdminOrdersController {
   }
 
   /**
-   * GET /api/v1/admin/orders/:id
-   */
-  @Get(':id')
-  @ApiOperation({ summary: 'Admin: Get order by ID' })
-  @ApiParam({ name: 'id', description: 'Order UUID' })
-  async findOne(@Param('id', ParseUUIDPipe) orderId: string) {
-    return this.ordersService.findOrderById(orderId);
-  }
-
-  /**
-   * PATCH /api/v1/admin/orders/:id/status
-   */
-  @Patch(':id/status')
-  @ApiOperation({ summary: 'Admin: Update order status' })
-  @ApiParam({ name: 'id', description: 'Order UUID' })
-  @ApiResponse({ status: 200, description: 'Status updated' })
-  @ApiResponse({ status: 400, description: 'Invalid state transition' })
-  async updateStatus(
-    @Param('id', ParseUUIDPipe) orderId: string,
-    @Body() dto: UpdateOrderStatusDto,
-    @CurrentUser('id') adminId: string,
-  ) {
-    return this.ordersService.updateOrderStatus(orderId, dto, adminId);
-  }
-
-  /**
    * GET /api/v1/admin/orders/return-requests
+   * NOTE: must be declared before :id to avoid NestJS routing :id param matching "return-requests"
    */
   @Get('return-requests')
   @ApiOperation({ summary: 'Admin: List all return requests' })
@@ -228,6 +203,7 @@ export class AdminOrdersController {
 
   /**
    * PATCH /api/v1/admin/orders/return-requests/:id
+   * NOTE: must be declared before :id/status to avoid conflicts
    */
   @Patch('return-requests/:id')
   @ApiOperation({ summary: 'Admin: Approve or reject a return request' })
@@ -242,6 +218,7 @@ export class AdminOrdersController {
 
   /**
    * GET /api/v1/admin/orders/cancellation-requests
+   * NOTE: must be declared before :id to avoid NestJS routing :id param matching "cancellation-requests"
    */
   @Get('cancellation-requests')
   @ApiOperation({ summary: 'Admin: List all cancellation requests' })
@@ -266,6 +243,7 @@ export class AdminOrdersController {
 
   /**
    * GET /api/v1/admin/orders/analytics/revenue
+   * NOTE: must be declared before :id
    */
   @Get('analytics/revenue')
   @ApiOperation({ summary: 'Admin: Get revenue summary for date range' })
@@ -276,5 +254,32 @@ export class AdminOrdersController {
     @Query('to') to: string,
   ) {
     return this.ordersService.getRevenueSummary(new Date(from), new Date(to));
+  }
+
+  /**
+   * GET /api/v1/admin/orders/:id
+   * NOTE: dynamic :id is intentionally declared LAST so static routes above take priority
+   */
+  @Get(':id')
+  @ApiOperation({ summary: 'Admin: Get order by ID' })
+  @ApiParam({ name: 'id', description: 'Order UUID' })
+  async findOne(@Param('id', ParseUUIDPipe) orderId: string) {
+    return this.ordersService.findOrderById(orderId);
+  }
+
+  /**
+   * PATCH /api/v1/admin/orders/:id/status
+   */
+  @Patch(':id/status')
+  @ApiOperation({ summary: 'Admin: Update order status' })
+  @ApiParam({ name: 'id', description: 'Order UUID' })
+  @ApiResponse({ status: 200, description: 'Status updated' })
+  @ApiResponse({ status: 400, description: 'Invalid state transition' })
+  async updateStatus(
+    @Param('id', ParseUUIDPipe) orderId: string,
+    @Body() dto: UpdateOrderStatusDto,
+    @CurrentUser('id') adminId: string,
+  ) {
+    return this.ordersService.updateOrderStatus(orderId, dto, adminId);
   }
 }

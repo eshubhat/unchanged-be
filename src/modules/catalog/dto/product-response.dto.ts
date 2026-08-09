@@ -68,6 +68,7 @@ export class ProductResponseDto {
   @Expose() isLimitedStock: boolean;
   @Expose() isActive: boolean;
   @Expose() tags: string[];
+  @Expose() features: string[];
   @Expose() metaTitle: string | null;
   @Expose() metaDescription: string | null;
   @Expose() averageRating: number;

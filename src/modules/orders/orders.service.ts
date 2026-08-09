@@ -118,7 +118,7 @@ export class OrdersService {
       }
 
       const shippingCharge = subtotal >= 499 ? 0 : 49;   // free shipping above ₹499
-      const taxAmount = Math.round(subtotal * 0.05 * 100) / 100; // 5% GST
+      const taxAmount = Math.round(subtotal * 0.02 * 100) / 100; // 2% Processing Fee (stored in taxAmount column)
       const totalAmount = Math.max(0, subtotal + shippingCharge + taxAmount - discountAmount);
 
       // 8. Generate order number

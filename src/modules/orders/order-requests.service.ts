@@ -80,14 +80,14 @@ export class OrderRequestsService {
 
     const saved = await this.returnRepo.save(returnRequest);
 
-    // Update order status to RETURNED (pending review)
-    await this.orderRepo.update(orderId, { status: OrderStatus.RETURNED });
+    // Update order status to RETURN_REQUESTED (pending review)
+    await this.orderRepo.update(orderId, { status: OrderStatus.RETURN_REQUESTED });
 
     await this.historyRepo.save(
       this.historyRepo.create({
         orderId,
         fromStatus: OrderStatus.DELIVERED,
-        toStatus: OrderStatus.RETURNED,
+        toStatus: OrderStatus.RETURN_REQUESTED,
         note: `Return requested: ${dto.reason}`,
         changedBy: userId,
       }),
@@ -162,6 +162,17 @@ export class OrderRequestsService {
     const saved = await this.returnRepo.save(returnRequest);
 
     if (dto.action === 'approved') {
+      await this.orderRepo.update(returnRequest.orderId, { status: OrderStatus.RETURNED });
+      await this.historyRepo.save(
+        this.historyRepo.create({
+          orderId: returnRequest.orderId,
+          fromStatus: returnRequest.order.status,
+          toStatus: OrderStatus.RETURNED,
+          note: `Return approved by admin. Admin note: ${dto.adminNote || 'None'}`,
+          changedBy: adminId,
+        }),
+      );
+
       setImmediate(() => {
         this.eventEmitter.emit(
           ReturnApprovedEvent.EVENT_NAME,

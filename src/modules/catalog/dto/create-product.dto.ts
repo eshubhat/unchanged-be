@@ -170,6 +170,13 @@ export class CreateProductDto {
   @Transform(({ value }) => (Array.isArray(value) ? value : []))
   tags?: string[];
 
+  @ApiPropertyOptional({ example: ['100% Cotton', 'Oversized Fit', 'Machine Washable'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Transform(({ value }) => (Array.isArray(value) ? value : []))
+  features?: string[];
+
   @ApiPropertyOptional({ default: false })
   @IsOptional()
   @IsBoolean()

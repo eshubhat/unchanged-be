@@ -5,7 +5,6 @@ export enum UserRole {
   SUPER_ADMIN = 'super_admin',
 }
 
-// ─── Order Status ───────────────────────────────────────────────────────────────
 export enum OrderStatus {
   PENDING = 'pending',
   CONFIRMED = 'confirmed',
@@ -14,6 +13,7 @@ export enum OrderStatus {
   OUT_FOR_DELIVERY = 'out_for_delivery',
   DELIVERED = 'delivered',
   CANCELLED = 'cancelled',
+  RETURN_REQUESTED = 'return_requested',
   RETURNED = 'returned',
   REFUNDED = 'refunded',
 }

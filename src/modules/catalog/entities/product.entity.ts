@@ -79,6 +79,9 @@ export class Product extends BaseEntity {
   @Column({ name: 'tags', type: 'varchar', array: true, default: '{}' })
   tags: string[];
 
+  @Column({ name: 'features', type: 'varchar', array: true, default: '{}' })
+  features: string[];
+
   @Column({ name: 'meta_title', type: 'varchar', length: 255, nullable: true })
   metaTitle: string | null;
 

@@ -19,8 +19,9 @@ const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   [OrderStatus.PROCESSING]:       [OrderStatus.SHIPPED, OrderStatus.CANCELLED],
   [OrderStatus.SHIPPED]:          [OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED],
   [OrderStatus.OUT_FOR_DELIVERY]: [OrderStatus.DELIVERED],
-  [OrderStatus.DELIVERED]:        [OrderStatus.RETURNED],
+  [OrderStatus.DELIVERED]:        [OrderStatus.RETURN_REQUESTED, OrderStatus.RETURNED],
   [OrderStatus.CANCELLED]:        [],
+  [OrderStatus.RETURN_REQUESTED]: [OrderStatus.RETURNED],
   [OrderStatus.RETURNED]:         [OrderStatus.REFUNDED],
   [OrderStatus.REFUNDED]:         [],
 };
@@ -34,6 +35,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   [OrderStatus.OUT_FOR_DELIVERY]: 'Out for Delivery',
   [OrderStatus.DELIVERED]:        'Delivered',
   [OrderStatus.CANCELLED]:        'Cancelled',
+  [OrderStatus.RETURN_REQUESTED]: 'Return Requested',
   [OrderStatus.RETURNED]:         'Returned',
   [OrderStatus.REFUNDED]:         'Refunded',
 };
