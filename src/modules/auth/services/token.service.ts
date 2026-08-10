@@ -33,13 +33,21 @@ export class TokenService {
 
   // ─── Token Generation ───────────────────────────────────────────────────────
 
+  private parseToSeconds(val: string): number {
+    const match = val.trim().match(/^(\d+)([smhd])?$/);
+    if (!match) return 86400;
+    const num = parseInt(match[1], 10);
+    switch (match[2]) {
+      case 'm': return num * 60;
+      case 'h': return num * 3600;
+      case 'd': return num * 86400;
+      default: return num;
+    }
+  }
+
   async generateTokenPair(user: User, ipAddress?: string, userAgent?: string): Promise<TokenPair> {
-    // parseInt() is required: ConfigService.get<number>() does NOT coerce env
-    // var strings to numbers. Without it arithmetic like * 1000 may work via JS
-    // coercion but the returned accessTokenExpiresIn would be a string, breaking
-    // the frontend's expiry timestamp calculation.
-    const accessExpiresIn = parseInt(this.configService.get('JWT_EXPIRES_IN', '86400'), 10);
-    const refreshExpiresIn = parseInt(this.configService.get('JWT_REFRESH_EXPIRES_IN', '604800'), 10);
+    const accessExpiresIn = this.parseToSeconds(this.configService.get('JWT_EXPIRES_IN', '86400'));
+    const refreshExpiresIn = this.parseToSeconds(this.configService.get('JWT_REFRESH_EXPIRES_IN', '604800'));
 
     // Create a DB record first to get a stable UUID for the refresh token payload
     const tokenRecord = this.refreshTokenRepository.create({

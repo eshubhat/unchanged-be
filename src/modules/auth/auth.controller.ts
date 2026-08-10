@@ -103,6 +103,7 @@ export class AuthController {
 
   // ─── Logout ───────────────────────────────────────────────────────────────
 
+  @Public()
   @UseGuards(JwtRefreshGuard)
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -131,6 +132,7 @@ export class AuthController {
 
   // ─── Token Refresh ────────────────────────────────────────────────────────
 
+  @Public()
   @UseGuards(JwtRefreshGuard)
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
