@@ -211,6 +211,12 @@ export class CreateProductDto {
   @IsUUID(undefined, { each: true })
   collectionIds?: string[];
 
+  @ApiPropertyOptional({ description: 'Additional category UUIDs this product belongs to (besides the primary category)' })
+  @IsOptional()
+  @IsArray()
+  @IsUUID(undefined, { each: true })
+  additionalCategoryIds?: string[];
+
   @ApiPropertyOptional({ type: [CreateVariantDto] })
   @IsOptional()
   @IsArray()

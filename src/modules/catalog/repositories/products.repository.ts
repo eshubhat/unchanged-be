@@ -18,6 +18,7 @@ export class ProductsRepository {
     return this.repo
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.additionalCategories', 'additionalCategory')
       .leftJoinAndSelect('product.subcategory', 'subcategory')
       .leftJoinAndSelect('product.brand', 'brand')
       .leftJoinAndSelect('product.images', 'image')
@@ -36,6 +37,7 @@ export class ProductsRepository {
     const qb = this.repo
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.additionalCategories', 'additionalCategory')
       .leftJoinAndSelect('product.subcategory', 'subcategory')
       .leftJoinAndSelect('product.brand', 'brand')
       .leftJoinAndSelect('product.images', 'image')
@@ -89,6 +91,7 @@ export class ProductsRepository {
     // Main query with all joins for rich response
     const items = await qb
       .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.additionalCategories', 'additionalCategory')
       .leftJoinAndSelect('product.subcategory', 'subcategory')
       .leftJoinAndSelect('product.brand', 'brand')
       .leftJoinAndSelect('product.images', 'image')

@@ -99,6 +99,15 @@ export class Product extends BaseEntity {
   @JoinColumn({ name: 'category_id' })
   category: Category;
 
+  // Additional categories a product can belong to (many-to-many via join table)
+  @ManyToMany(() => Category, { eager: false })
+  @JoinTable({
+    name: 'product_additional_categories',
+    joinColumn: { name: 'product_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'category_id', referencedColumnName: 'id' },
+  })
+  additionalCategories: Category[];
+
   @ManyToOne(() => SubCategory, (sub) => sub.products, {
     nullable: true,
     onDelete: 'SET NULL',

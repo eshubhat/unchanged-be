@@ -84,6 +84,19 @@ export class ProductsService {
         collections = await manager.findByIds(Collection, dto.collectionIds);
       }
 
+      // 6b. Resolve additional categories
+      let additionalCategories: Category[] = [];
+      if (dto.additionalCategoryIds?.length) {
+        // Filter out the primary category to avoid duplication
+        const extraIds = dto.additionalCategoryIds.filter((id) => id !== dto.categoryId);
+        if (extraIds.length) {
+          additionalCategories = await manager.findByIds(Category, extraIds);
+          if (additionalCategories.length !== extraIds.length) {
+            throw new NotFoundException('One or more additional category IDs not found');
+          }
+        }
+      }
+
       // 7. Build product entity
       const product = manager.create(Product, {
         sku,
@@ -104,6 +117,7 @@ export class ProductsService {
         metaTitle: dto.metaTitle ?? null,
         metaDescription: dto.metaDescription ?? null,
         collections,
+        additionalCategories,
       });
 
       const savedProduct = await manager.save(Product, product);
@@ -144,7 +158,7 @@ export class ProductsService {
       // Return the full product using the transaction manager so it sees the uncommitted inserts
       return (await manager.findOne(Product, {
         where: { id: savedProduct.id },
-        relations: ['category', 'subcategory', 'brand', 'images', 'attributes', 'variants', 'variants.inventory'],
+        relations: ['category', 'additionalCategories', 'subcategory', 'brand', 'images', 'attributes', 'variants', 'variants.inventory'],
       }))!;
     });
   }
@@ -183,7 +197,7 @@ export class ProductsService {
     return this.dataSource.transaction(async (manager) => {
       const product = await manager.findOne(Product, {
         where: { id },
-        relations: ['collections'],
+        relations: ['collections', 'additionalCategories'],
       });
 
       if (!product) {
@@ -215,6 +229,21 @@ export class ProductsService {
         product.collections = collections;
       }
 
+      // Update additional categories if provided
+      if (dto.additionalCategoryIds !== undefined) {
+        const primaryCategoryId = dto.categoryId ?? product.categoryId;
+        if (dto.additionalCategoryIds.length > 0) {
+          const extraIds = dto.additionalCategoryIds.filter((id) => id !== primaryCategoryId);
+          const cats = extraIds.length ? await manager.findByIds(Category, extraIds) : [];
+          if (extraIds.length && cats.length !== extraIds.length) {
+            throw new NotFoundException('One or more additional category IDs not found');
+          }
+          product.additionalCategories = cats;
+        } else {
+          product.additionalCategories = [];
+        }
+      }
+
       Object.assign(product, {
         ...(dto.name && { name: dto.name }),
         ...(dto.slug && { slug: dto.slug }),
@@ -238,7 +267,7 @@ export class ProductsService {
 
       return (await manager.findOne(Product, {
         where: { id },
-        relations: ['category', 'subcategory', 'brand', 'images', 'attributes', 'variants', 'variants.inventory'],
+        relations: ['category', 'additionalCategories', 'subcategory', 'brand', 'images', 'attributes', 'variants', 'variants.inventory'],
       }))!;
     });
   }

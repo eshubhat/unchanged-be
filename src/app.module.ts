@@ -9,6 +9,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { AddressModule } from './modules/address/address.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 import { dataSourceOptions } from './database/data-source';
 
 @Module({
@@ -53,6 +54,7 @@ import { dataSourceOptions } from './database/data-source';
     UploadsModule,
     AddressModule,
     PaymentsModule,
+    ReviewsModule,
   ],
 })
 export class AppModule {}
