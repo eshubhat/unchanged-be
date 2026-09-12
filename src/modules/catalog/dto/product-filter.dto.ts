@@ -44,6 +44,12 @@ export class ProductFilterDto {
   @IsUUID()
   categoryId?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by category slug (e.g. mens, womens)' })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => value?.trim().toLowerCase())
+  categorySlug?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsUUID()
