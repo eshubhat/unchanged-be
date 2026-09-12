@@ -137,6 +137,15 @@ export class ProductsRepository {
       });
     }
 
+    if (filter.categorySlug) {
+      qb.innerJoin(
+        'product.category',
+        'filterCategory',
+        'filterCategory.slug = :catSlug',
+        { catSlug: filter.categorySlug },
+      );
+    }
+
     if (filter.subcategoryId) {
       qb.andWhere('product.subcategoryId = :subcategoryId', {
         subcategoryId: filter.subcategoryId,
