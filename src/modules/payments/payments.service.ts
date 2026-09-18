@@ -67,6 +67,41 @@ export class PaymentsService {
 
     const amountInPaise = Math.round(order.totalAmount * 100);
 
+    // ── Reuse an existing unpaid Razorpay order if one already exists ─────────
+    // This prevents ghost "pending" orders in the Razorpay dashboard when the
+    // user dismisses the modal and clicks "Pay Now" again (or navigates back
+    // and returns to the payment page).
+    const existing = await this.paymentRepo.findOne({ where: { orderId } });
+
+    if (
+      existing?.razorpayOrderId &&
+      existing.status === RazorpayPaymentStatus.CREATED
+    ) {
+      try {
+        // Verify the Razorpay order is still open (not expired / cancelled)
+        const rzpOrder = await this.razorpay.orders.fetch(existing.razorpayOrderId);
+        if (rzpOrder && rzpOrder.status === 'created') {
+          this.logger.log(
+            `Reusing existing Razorpay order ${existing.razorpayOrderId} for order ${orderId}`,
+          );
+          return {
+            razorpayOrderId: existing.razorpayOrderId,
+            amount: amountInPaise,
+            currency: 'INR',
+            key: this.configService.getOrThrow<string>('RAZORPAY_KEY_ID'),
+          };
+        }
+        // If the Razorpay order is in any other state (attempted, paid, expired),
+        // fall through to create a fresh one.
+      } catch (fetchErr) {
+        // If fetching fails (e.g. network error), fall through to create a new order.
+        this.logger.warn(
+          `Could not fetch Razorpay order ${existing.razorpayOrderId}: ${fetchErr.message}. Creating a new one.`,
+        );
+      }
+    }
+
+    // ── Create a new Razorpay order ───────────────────────────────────────────
     let razorpayOrder: any;
     try {
       razorpayOrder = await this.razorpay.orders.create({
@@ -84,8 +119,6 @@ export class PaymentsService {
     }
 
     // Upsert payment record
-    const existing = await this.paymentRepo.findOne({ where: { orderId } });
-
     const payment = existing ?? this.paymentRepo.create({ orderId });
     payment.razorpayOrderId = razorpayOrder.id;
     payment.amount = order.totalAmount;
